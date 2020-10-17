@@ -3,7 +3,7 @@ apply plugin: 'de.undercouch.download'
 
 android {
     compileSdkVersion 28
-    buildToolsVersion '28.0.3'
+    buildToolsVersion '29.0.2'
     defaultConfig {
         applicationId "org.tensorflow.lite.examples.detection"
         minSdkVersion 21

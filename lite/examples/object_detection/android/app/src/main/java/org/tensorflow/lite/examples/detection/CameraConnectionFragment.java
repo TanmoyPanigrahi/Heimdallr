@@ -80,8 +80,8 @@ public class CameraConnectionFragment extends Fragment {
   static {
     ORIENTATIONS.append(Surface.ROTATION_0, 90);
     ORIENTATIONS.append(Surface.ROTATION_90, 0);
-    ORIENTATIONS.append(Surface.ROTATION_180, 270);
-    ORIENTATIONS.append(Surface.ROTATION_270, 180);
+    ORIENTATIONS.append(Surface.ROTATION_180, 180);
+    ORIENTATIONS.append(Surface.ROTATION_270, 270);
   }
 
   /** A {@link Semaphore} to prevent the app from exiting before closing the camera. */

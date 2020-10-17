@@ -24,16 +24,22 @@ import android.graphics.Paint.Cap;
 import android.graphics.Paint.Join;
 import android.graphics.Paint.Style;
 import android.graphics.RectF;
+import android.speech.tts.TextToSpeech;
+import android.speech.tts.TextToSpeechService;
 import android.text.TextUtils;
 import android.util.Pair;
 import android.util.TypedValue;
+
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Queue;
 import org.tensorflow.lite.examples.detection.env.BorderedText;
 import org.tensorflow.lite.examples.detection.env.ImageUtils;
 import org.tensorflow.lite.examples.detection.env.Logger;
 import org.tensorflow.lite.examples.detection.tflite.Classifier.Recognition;
+import org.w3c.dom.Text;
 
 /** A tracker that handles non-max suppression and matches existing objects to new detections. */
 public class MultiBoxTracker {
@@ -56,6 +62,10 @@ public class MultiBoxTracker {
     Color.parseColor("#AA33AA"),
     Color.parseColor("#0D0068")
   };
+  private static HashMap<String, String> spanish = new HashMap<>();
+  private static HashMap<String, String> french = new HashMap<>();
+  private static HashMap<String, String> german = new HashMap<>();
+
   final List<Pair<Float, RectF>> screenRects = new LinkedList<Pair<Float, RectF>>();
   private final Logger logger = new Logger();
   private final Queue<Integer> availableColors = new LinkedList<Integer>();
@@ -67,8 +77,43 @@ public class MultiBoxTracker {
   private int frameWidth;
   private int frameHeight;
   private int sensorOrientation;
+  private Context myContext;
 
   public MultiBoxTracker(final Context context) {
+    spanish.put("laptop","computadora");
+    spanish.put("oven","horno");
+    spanish.put("person","persona");
+    spanish.put("sink","lavabo");
+    spanish.put("couch","sofá");
+    spanish.put("microwave","microondas");
+    spanish.put("chair","silla");
+    spanish.put("refrigerator","refrigerador");
+    spanish.put("cup","taza");
+    spanish.put("dining table","comedor");
+
+    french.put("laptop","portable");
+    french.put("oven","four");
+    french.put("person","la personne");
+    french.put("sink","evier");
+    french.put("couch","canapé");
+    french.put("microwave","four micro-onde");
+    french.put("chair","chaise");
+    french.put("refrigerator","réfrigérateur");
+    french.put("cup","coupe");
+    french.put("dining table","table à manger");
+
+    german.put("laptop","laptop");
+    german.put("oven","ofen");
+    german.put("person","person");
+    german.put("sink","sinken");
+    german.put("couch","couch");
+    german.put("microwave","mikrowelle");
+    german.put("chair","stuhl");
+    german.put("refrigerator","kühlschrank");
+    german.put("cup","tasse");
+    german.put("dining table","esstisch");
+
+
     for (final int color : COLORS) {
       availableColors.add(color);
     }
@@ -79,11 +124,14 @@ public class MultiBoxTracker {
     boxPaint.setStrokeCap(Cap.ROUND);
     boxPaint.setStrokeJoin(Join.ROUND);
     boxPaint.setStrokeMiter(100);
-
+    myContext = context;
+//    textSizePx =
+//        TypedValue.applyDimension(
+//           TypedValue.COMPLEX_UNIT_DIP, TEXT_SIZE_DIP, context.getResources().getDisplayMetrics());
     textSizePx =
-        TypedValue.applyDimension(
-            TypedValue.COMPLEX_UNIT_DIP, TEXT_SIZE_DIP, context.getResources().getDisplayMetrics());
-    borderedText = new BorderedText(textSizePx);
+            TypedValue.applyDimension(
+                    TypedValue.COMPLEX_UNIT_DIP, 36, context.getResources().getDisplayMetrics());
+    borderedText = new BorderedText(Color.BLACK, Color.BLUE, textSizePx);
   }
 
   public synchronized void setFrameConfiguration(
@@ -138,19 +186,59 @@ public class MultiBoxTracker {
       final RectF trackedPos = new RectF(recognition.location);
 
       getFrameToCanvasMatrix().mapRect(trackedPos);
-      boxPaint.setColor(recognition.color);
+      //boxPaint.setColor(recognition.color);
+      boxPaint.setColor(Color.BLACK);
 
       float cornerSize = Math.min(trackedPos.width(), trackedPos.height()) / 8.0f;
-      canvas.drawRoundRect(trackedPos, cornerSize, cornerSize, boxPaint);
+      //canvas.drawRoundRect(trackedPos, cornerSize, cornerSize, boxPaint);
 
       final String labelString =
           !TextUtils.isEmpty(recognition.title)
               ? String.format("%s %.2f", recognition.title, (100 * recognition.detectionConfidence))
               : String.format("%.2f", (100 * recognition.detectionConfidence));
+//      final String labelString =
+//              !TextUtils.isEmpty(recognition.title)
+//                      ? String.format("%s %.2f", recognition.title)
+//                      : "";
       //            borderedText.drawText(canvas, trackedPos.left + cornerSize, trackedPos.top,
       // labelString);
-      borderedText.drawText(
-          canvas, trackedPos.left + cornerSize, trackedPos.top, labelString + "%", boxPaint);
+      if(french.containsKey(recognition.title)) {
+        borderedText.drawText(
+                canvas, trackedPos.left + cornerSize, trackedPos.top, french.get(recognition.title));
+      } else {
+        borderedText.drawText(
+                canvas, trackedPos.left + cornerSize, trackedPos.top, recognition.title);
+      }
+//      borderedText.drawText(
+//              canvas, trackedPos.left + cornerSize, trackedPos.top, recognition.title);
+      TextToSpeech ttobj;
+
+      final boolean[] isInitialized = {false};
+      ttobj=new TextToSpeech(myContext, new TextToSpeech.OnInitListener() {
+        @Override
+        public void onInit(int status) {
+          if(status != TextToSpeech.ERROR) {
+            isInitialized[0] = true;
+          }
+        }
+      });
+
+      if(isInitialized[0]) {
+        ttobj.setLanguage(Locale.UK);
+        ttobj.speak("Test", TextToSpeech.QUEUE_FLUSH, null, "1");
+      }
+      //speak(ttobj);
+
+//      if (!ttobj.isSpeaking()) {
+//        ttobj.setLanguage(Locale.UK);
+//        ttobj.speak("Test", TextToSpeech.QUEUE_FLUSH, null, "1");
+//      }
+    }
+  }
+  public void speak(TextToSpeech ttobj) {
+    if (!ttobj.isSpeaking()) {
+      ttobj.setLanguage(Locale.UK);
+      ttobj.speak("Test", TextToSpeech.QUEUE_FLUSH, null, "1");
     }
   }
 
